@@ -73,6 +73,11 @@ static long long getint(va_list *ap, int lflag) {
 // Main function to format and print a string.
 void printfmt(void (*putch)(int, void *), void *putdat, const char *fmt, ...);
 
+
+// puthc - link on the function that print one char
+// putdat - counter
+// va_list - args
+// this function parse formatted string and print on console formatted data
 void vprintfmt(void (*putch)(int, void *), void *putdat, const char *fmt, va_list ap) {
     register const char *p;
     register int ch, err;
@@ -81,9 +86,10 @@ void vprintfmt(void (*putch)(int, void *), void *putdat, const char *fmt, va_lis
     char padc;
 
     while (1) {
+        // just print chars while char is not %
         while ((ch = *(unsigned char *) fmt++) != '%') {
             if (ch == '\0')
-                return;
+                return; // if char is end of the string - return
             putch(ch, putdat);
         }
 
@@ -142,18 +148,15 @@ void vprintfmt(void (*putch)(int, void *), void *putdat, const char *fmt, va_lis
                     width = precision, precision = -1;
                 goto reswitch;
 
-                // long flag (doubled for long long)
-            case 'l':
+            case 'l': // long flag (doubled for long long)
                 lflag++;
                 goto reswitch;
 
-                // character
-            case 'c':
+            case 'c': // character
                 putch(va_arg(ap, int), putdat);
                 break;
 
-                // error message
-            case 'e':
+            case 'e': // error message
                 err = va_arg(ap, int);
                 if (err < 0)
                     err = -err;
@@ -163,8 +166,8 @@ void vprintfmt(void (*putch)(int, void *), void *putdat, const char *fmt, va_lis
                     printfmt(putch, putdat, "%s", p);
                 break;
 
-                // string
-            case 's':
+
+            case 's': // string
                 if ((p = va_arg(ap, char *)) == NULL)
                     p = "(null)";
                 if (width > 0 && padc != '-')
@@ -179,8 +182,7 @@ void vprintfmt(void (*putch)(int, void *), void *putdat, const char *fmt, va_lis
                     putch(' ', putdat);
                 break;
 
-                // (signed) decimal
-            case 'd':
+            case 'd': // (signed) decimal
                 num = getint(&ap, lflag);
                 if ((long long) num < 0) {
                     putch('-', putdat);
@@ -197,12 +199,9 @@ void vprintfmt(void (*putch)(int, void *), void *putdat, const char *fmt, va_lis
 
                 // (unsigned) octal
             case 'o':
-                // Replace this with your code.
-                num = getint(&ap, lflag);
-                putch(' ', putdat);
-                putch('X', putdat);
-                putch('X', putdat);
-                break;
+                num = getuint(&ap, lflag);
+                base = 8;
+                goto number;
 
                 // pointer
             case 'p':
