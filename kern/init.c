@@ -11,6 +11,7 @@
 void test_backtrace(int x, int y) {
     cprintf("entering test_backtrace %d\n", x);
     if (x > 0) {
+        cprintf("");
         test_backtrace(x - 1, y - 1);
     } else
         mon_backtrace(0, 0, 0);
