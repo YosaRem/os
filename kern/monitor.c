@@ -55,25 +55,30 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
-int mon_backtrace(int argc, char **argv, struct Trapframe *tf)
-{
+void printBacktraceInfo(uintptr_t bp, uintptr_t *ipaddr) {
     struct Eipdebuginfo debugInfo;
+    debuginfo_eip(*ipaddr, &debugInfo);
+    // print ebp and return address
+    cprintf(" ebp %08x eip %08x args ", bp, *ipaddr);
+    // print args
+    for (int i = 1; i <= 5; i++)
+        cprintf("%08x ", *(ipaddr + i));
+    cprintf("\r\n");
+
+    // print debug info
+    cprintf("    %s:", debugInfo.eip_file);
+    cprintf("%d: ", debugInfo.eip_line);
+    cprintf("%.*s+", debugInfo.eip_fn_namelen, debugInfo.eip_fn_name);
+    cprintf("%d\n", (int)(*ipaddr - debugInfo.eip_fn_addr));
+}
+
+int mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
     uintptr_t bp = read_ebp();
     uintptr_t *bpaddr = (uintptr_t *)bp;
     uintptr_t *ipaddr = (uintptr_t *)(bp + 4); // return address
+    cprintf("Stack backtrace:\n");
     while (1) {
-        debuginfo_eip(*ipaddr, &debugInfo);
-        // print ebp and return address
-        cprintf("ebp %p eip %p args ", bp, *ipaddr);
-
-        // print args
-        for (int i = 1; i <= 5; i++)
-            cprintf("%p ", *(ipaddr + i));
-        cprintf("\r\n");
-        cprintf("\t %s:", debugInfo.eip_file);
-        cprintf("%d ", debugInfo.eip_line);
-        cprintf("%.*s+", debugInfo.eip_fn_namelen, debugInfo.eip_fn_name);
-        cprintf("%d\n", (int)(*ipaddr - debugInfo.eip_fn_addr));
+        printBacktraceInfo(bp, ipaddr);
         // break if no more stack frames
         if (*bpaddr == 0x0) break;
         bp = *bpaddr;
@@ -82,9 +87,6 @@ int mon_backtrace(int argc, char **argv, struct Trapframe *tf)
     }
 	return 0;
 }
-
-
-
 
 
 /***** Kernel monitor command interpreter *****/
